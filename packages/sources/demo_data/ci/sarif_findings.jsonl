@@ -1,0 +1,1 @@
+{"pr_number":214,"rule_id":"no-secret-log","file_path":"services/payments/retry.ts","severity":"medium","message":"Retry error logging must not include authorization payloads."}

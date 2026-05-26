@@ -1,0 +1,2 @@
+{"issue_id":"SEN-991","title":"PaymentIntentTimeout","service":"checkout","route":"/checkout/confirm","event_count_7d":143,"last_seen_at":"2026-05-26T05:20:00Z","severity":"high"}
+{"issue_id":"SEN-882","title":"PaymentRetryWorkerTimeout","service":"payments","route":"/checkout/confirm","event_count_7d":48,"last_seen_at":"2026-05-25T22:15:00Z","severity":"high"}

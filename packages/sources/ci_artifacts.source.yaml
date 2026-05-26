@@ -1,0 +1,85 @@
+name: ci_artifacts
+version: 0.1.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM ci_artifacts.test_failures LIMIT 1
+  - SELECT * FROM ci_artifacts.coverage_changes LIMIT 1
+  - SELECT * FROM ci_artifacts.sarif_findings LIMIT 1
+  - SELECT * FROM ci_artifacts.dependency_diff LIMIT 1
+  - SELECT * FROM ci_artifacts.codeowners LIMIT 1
+tables:
+  - name: test_failures
+    description: Failed test cases from CI artifacts
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/ci/
+      glob: "test_failures.jsonl"
+    columns:
+      - name: pr_number
+        type: Int64
+      - name: test_name
+        type: Utf8
+      - name: file_path
+        type: Utf8
+      - name: failure_message
+        type: Utf8
+      - name: failed_at
+        type: Utf8
+  - name: coverage_changes
+    description: Coverage deltas for changed files
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/ci/
+      glob: "coverage_changes.jsonl"
+    columns:
+      - name: pr_number
+        type: Int64
+      - name: file_path
+        type: Utf8
+      - name: before_percent
+        type: Float64
+      - name: after_percent
+        type: Float64
+      - name: changed_at
+        type: Utf8
+  - name: sarif_findings
+    description: Static analysis findings from SARIF export
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/ci/
+      glob: "sarif_findings.jsonl"
+    columns:
+      - name: pr_number
+        type: Int64
+      - name: rule_id
+        type: Utf8
+      - name: file_path
+        type: Utf8
+      - name: severity
+        type: Utf8
+      - name: message
+        type: Utf8
+  - name: dependency_diff
+    description: Dependency version changes detected in CI
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/ci/
+      glob: "dependency_diff.jsonl"
+    columns:
+      - name: pr_number
+        type: Int64
+      - name: dependency_name
+        type: Utf8
+      - name: from_version
+        type: Utf8
+      - name: to_version
+        type: Utf8
+  - name: codeowners
+    description: CODEOWNERS-derived ownership mapping
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/ci/
+      glob: "codeowners.jsonl"
+    columns:
+      - name: path_prefix
+        type: Utf8
+      - name: owner_team
+        type: Utf8
+      - name: on_call
+        type: Utf8

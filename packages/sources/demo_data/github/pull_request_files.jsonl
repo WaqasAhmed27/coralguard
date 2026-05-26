@@ -1,0 +1,5 @@
+{"owner":"demo","repo":"shop","pr_number":214,"file_path":"services/payments/retry.ts","additions":86,"deletions":34,"service":"payments","route":"/checkout/confirm","dependency_name":null,"criticality":"critical"}
+{"owner":"demo","repo":"shop","pr_number":214,"file_path":"services/checkout/confirm.ts","additions":42,"deletions":18,"service":"checkout","route":"/checkout/confirm","dependency_name":null,"criticality":"critical"}
+{"owner":"demo","repo":"shop","pr_number":214,"file_path":"packages/payments/package.json","additions":3,"deletions":3,"service":"payments","route":null,"dependency_name":"payment-retry","criticality":"high"}
+{"owner":"demo","repo":"shop","pr_number":7,"file_path":"README.md","additions":12,"deletions":4,"service":"docs","route":null,"dependency_name":null,"criticality":"low"}
+{"owner":"demo","repo":"shop","pr_number":7,"file_path":"docs/deployment.md","additions":22,"deletions":8,"service":"docs","route":null,"dependency_name":null,"criticality":"low"}

@@ -1,0 +1,2 @@
+{"incident_id":"INC-104","channel":"#incidents-payments","service":"payments","file_path":"services/payments/retry.ts","summary":"Payment retry timeout caused duplicate authorization attempts during checkout_v2 ramp.","severity":"high","occurred_at":"2026-04-18T16:22:00Z"}
+{"incident_id":"INC-077","channel":"#incidents-checkout","service":"checkout","file_path":"services/checkout/confirm.ts","summary":"Checkout confirmation latency rose after retry backoff changed.","severity":"medium","occurred_at":"2026-03-20T08:00:00Z"}

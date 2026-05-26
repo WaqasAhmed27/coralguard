@@ -1,0 +1,5 @@
+{"path_prefix":"services/payments/","owner_team":"payments-platform","on_call":"payments-primary"}
+{"path_prefix":"services/checkout/","owner_team":"checkout-platform","on_call":"checkout-primary"}
+{"path_prefix":"packages/payments/","owner_team":"payments-platform","on_call":"payments-primary"}
+{"path_prefix":"docs/","owner_team":"developer-experience","on_call":"dx-primary"}
+{"path_prefix":"README.md","owner_team":"developer-experience","on_call":"dx-primary"}
