@@ -10,4 +10,6 @@ reports/
 *.log
 .tools/
 .coral-config/
+.coral-live-config/
 *.local.source.yaml
+*.live-fallback.source.yaml

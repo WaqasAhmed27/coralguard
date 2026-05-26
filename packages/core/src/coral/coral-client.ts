@@ -5,6 +5,7 @@ import path from "node:path";
 import type { ParsedPr } from "../schemas/input.js";
 import { redactForDisplay } from "../security/redact.js";
 import { bindSql, getQuery, type QueryId } from "./query-registry.js";
+import type { QueryProfile } from "./query-registry.js";
 import { resolveCoralBin } from "./coral-bin.js";
 
 export type QueryRow = Record<string, unknown>;
@@ -14,10 +15,14 @@ export interface CoralClient {
 }
 
 export class CoralCliClient implements CoralClient {
-  constructor(private readonly coralBin = resolveCoralBin(), private readonly timeoutMs = 10_000) {}
+  constructor(
+    private readonly coralBin = resolveCoralBin(),
+    private readonly timeoutMs = 10_000,
+    private readonly profile: QueryProfile = process.env.CORAL_QUERY_PROFILE === "live" ? "live" : "demo"
+  ) {}
 
   async runQuery(queryId: QueryId, input: ParsedPr): Promise<QueryRow[]> {
-    const query = bindSql(getQuery(queryId), input);
+    const query = bindSql(getQuery(queryId), input, this.profile);
     const args = ["sql", "--format", "json", query];
     const output = await runSafeCommand(this.coralBin, args, this.timeoutMs);
     try {

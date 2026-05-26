@@ -15,6 +15,7 @@
     "test:e2e": "npm run build && tsx scripts/run-e2e.ts",
     "demo": "tsx scripts/run-demo-assessment.ts",
     "demo:coral": "tsx scripts/run-coral-live-assessment.ts",
+    "install:live-sources": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

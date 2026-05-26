@@ -17,6 +17,7 @@ export type QueryDefinition = {
   label: string;
   sources: string[];
   sql: string;
+  liveSql?: string;
 };
 
 export const queryRegistry: Record<QueryId, QueryDefinition> = {
@@ -28,6 +29,21 @@ export const queryRegistry: Record<QueryId, QueryDefinition> = {
 SELECT owner, repo, pr_number, title, body, author, head_sha, base_branch, created_at, updated_at
 FROM github.pull_requests
 WHERE owner = :owner AND repo = :repo AND pr_number = :pr_number
+LIMIT 1`,
+    liveSql: `
+SELECT
+  owner,
+  repo,
+  number AS pr_number,
+  title,
+  body,
+  user__login AS author,
+  head__sha AS head_sha,
+  base__ref AS base_branch,
+  created_at,
+  updated_at
+FROM github.pulls
+WHERE owner = :owner AND repo = :repo AND number = :pr_number
 LIMIT 1`
   },
   "github.changed_files": {
@@ -38,6 +54,32 @@ LIMIT 1`
 SELECT owner, repo, pr_number, file_path, additions, deletions, service, route, dependency_name, criticality
 FROM github.pull_request_files
 WHERE owner = :owner AND repo = :repo AND pr_number = :pr_number
+ORDER BY criticality DESC, file_path
+LIMIT 200`,
+    liveSql: `
+SELECT
+  owner,
+  repo,
+  pull_number AS pr_number,
+  filename AS file_path,
+  additions,
+  deletions,
+  CASE
+    WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
+    WHEN filename LIKE '%checkout%' THEN 'checkout'
+    WHEN filename LIKE '%auth%' THEN 'auth'
+    WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
+    ELSE split_part(filename, '/', 1)
+  END AS service,
+  NULL AS route,
+  CASE WHEN filename LIKE '%package.json' THEN 'unknown-package' ELSE NULL END AS dependency_name,
+  CASE
+    WHEN filename LIKE '%payment%' OR filename LIKE '%checkout%' OR filename LIKE '%auth%' OR filename LIKE '%deploy%' THEN 'critical'
+    WHEN filename LIKE '%package.json' THEN 'high'
+    ELSE 'low'
+  END AS criticality
+FROM github.files
+WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 ORDER BY criticality DESC, file_path
 LIMIT 200`
   },
@@ -50,6 +92,21 @@ WITH changed AS (
   SELECT file_path
   FROM github.pull_request_files
   WHERE owner = :owner AND repo = :repo AND pr_number = :pr_number
+),
+failures AS (
+  SELECT pr_number, test_name, file_path, failure_message, failed_at
+  FROM ci_artifacts.test_failures
+  WHERE pr_number = :pr_number
+)
+SELECT failures.test_name, failures.file_path, failures.failure_message, failures.failed_at
+FROM failures
+JOIN changed ON failures.file_path = changed.file_path
+LIMIT 50`,
+    liveSql: `
+WITH changed AS (
+  SELECT filename AS file_path
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 ),
 failures AS (
   SELECT pr_number, test_name, file_path, failure_message, failed_at
@@ -74,6 +131,16 @@ WITH changed AS (
 SELECT coverage.file_path, coverage.before_percent, coverage.after_percent, coverage.changed_at
 FROM ci_artifacts.coverage_changes AS coverage
 JOIN changed ON coverage.file_path = changed.file_path
+LIMIT 50`,
+    liveSql: `
+WITH changed AS (
+  SELECT filename AS file_path
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+)
+SELECT coverage.file_path, coverage.before_percent, coverage.after_percent, coverage.changed_at
+FROM ci_artifacts.coverage_changes AS coverage
+JOIN changed ON coverage.file_path = changed.file_path
 LIMIT 50`
   },
   "risk.recent_errors_by_service": {
@@ -85,6 +152,25 @@ WITH services AS (
   SELECT DISTINCT service
   FROM github.pull_request_files
   WHERE owner = :owner AND repo = :repo AND pr_number = :pr_number AND service IS NOT NULL
+)
+SELECT issue_id, title, service, route, event_count_7d, last_seen_at, severity
+FROM sentry.issues
+JOIN services USING (service)
+WHERE event_count_7d > 0
+ORDER BY event_count_7d DESC
+LIMIT 25`,
+    liveSql: `
+WITH services AS (
+  SELECT DISTINCT
+    CASE
+      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
+      WHEN filename LIKE '%checkout%' THEN 'checkout'
+      WHEN filename LIKE '%auth%' THEN 'auth'
+      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
+      ELSE split_part(filename, '/', 1)
+    END AS service
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 )
 SELECT issue_id, title, service, route, event_count_7d, last_seen_at, severity
 FROM sentry.issues
@@ -114,6 +200,32 @@ SELECT DISTINCT
 FROM slack_incidents.incidents AS incidents
 JOIN changed ON incidents.service = changed.service OR incidents.file_path = changed.file_path
 ORDER BY occurred_at DESC
+LIMIT 25`,
+    liveSql: `
+WITH changed AS (
+  SELECT
+    filename AS file_path,
+    CASE
+      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
+      WHEN filename LIKE '%checkout%' THEN 'checkout'
+      WHEN filename LIKE '%auth%' THEN 'auth'
+      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
+      ELSE split_part(filename, '/', 1)
+    END AS service
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+)
+SELECT DISTINCT
+  incidents.incident_id,
+  incidents.channel,
+  incidents.service,
+  incidents.file_path,
+  incidents.summary,
+  incidents.severity,
+  incidents.occurred_at
+FROM slack_incidents.incidents AS incidents
+JOIN changed ON incidents.service = changed.service OR incidents.file_path = changed.file_path
+ORDER BY occurred_at DESC
 LIMIT 25`
   },
   "risk.support_tickets_by_keyword": {
@@ -131,6 +243,25 @@ FROM support.ticket_clusters
 JOIN services USING (service)
 WHERE ticket_count_7d > 0
 ORDER BY ticket_count_7d DESC
+LIMIT 10`,
+    liveSql: `
+WITH services AS (
+  SELECT DISTINCT
+    CASE
+      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
+      WHEN filename LIKE '%checkout%' THEN 'checkout'
+      WHEN filename LIKE '%auth%' THEN 'auth'
+      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
+      ELSE split_part(filename, '/', 1)
+    END AS service
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+)
+SELECT cluster_id, service, queue, customer_segment, ticket_count_7d, summary, latest_ticket_at
+FROM support.ticket_clusters
+JOIN services USING (service)
+WHERE ticket_count_7d > 0
+ORDER BY ticket_count_7d DESC
 LIMIT 10`
   },
   "risk.flag_exposure_by_service": {
@@ -142,6 +273,23 @@ WITH services AS (
   SELECT DISTINCT service
   FROM github.pull_request_files
   WHERE owner = :owner AND repo = :repo AND pr_number = :pr_number
+)
+SELECT flag_key, service, rollout_percent, segment, updated_at
+FROM flags.rollouts
+JOIN services USING (service)
+LIMIT 25`,
+    liveSql: `
+WITH services AS (
+  SELECT DISTINCT
+    CASE
+      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
+      WHEN filename LIKE '%checkout%' THEN 'checkout'
+      WHEN filename LIKE '%auth%' THEN 'auth'
+      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
+      ELSE split_part(filename, '/', 1)
+    END AS service
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 )
 SELECT flag_key, service, rollout_percent, segment, updated_at
 FROM flags.rollouts
@@ -177,6 +325,25 @@ SELECT changed.file_path, changed.service, codeowners.owner_team, codeowners.on_
 FROM changed
 LEFT JOIN ci_artifacts.codeowners AS codeowners
   ON changed.file_path LIKE codeowners.path_prefix || '%'
+LIMIT 200`,
+    liveSql: `
+WITH changed AS (
+  SELECT
+    filename AS file_path,
+    CASE
+      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
+      WHEN filename LIKE '%checkout%' THEN 'checkout'
+      WHEN filename LIKE '%auth%' THEN 'auth'
+      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
+      ELSE split_part(filename, '/', 1)
+    END AS service
+  FROM github.files
+  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+)
+SELECT changed.file_path, changed.service, codeowners.owner_team, codeowners.on_call
+FROM changed
+LEFT JOIN ci_artifacts.codeowners AS codeowners
+  ON changed.file_path LIKE codeowners.path_prefix || '%'
 LIMIT 200`
   }
 };
@@ -187,8 +354,11 @@ export function getQuery(id: QueryId): QueryDefinition {
   return queryRegistry[id];
 }
 
-export function bindSql(definition: QueryDefinition, input: ParsedPr): string {
-  return definition.sql
+export type QueryProfile = "demo" | "live";
+
+export function bindSql(definition: QueryDefinition, input: ParsedPr, profile: QueryProfile = "demo"): string {
+  const sql = profile === "live" && definition.liveSql ? definition.liveSql : definition.sql;
+  return sql
     .replaceAll(":owner", sqlString(input.owner))
     .replaceAll(":repo", sqlString(input.repo))
     .replaceAll(":pr_number", String(input.prNumber));

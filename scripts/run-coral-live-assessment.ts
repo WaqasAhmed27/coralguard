@@ -3,6 +3,7 @@ import { assessPullRequest, CoralCliClient, resolveCoralBin } from "@coralguard/
 
 process.env.CORAL_BIN ??= resolveCoralBin();
 process.env.CORAL_CONFIG_DIR ??= path.resolve(process.cwd(), ".coral-config");
+process.env.CORAL_QUERY_PROFILE ??= "demo";
 
 const input = process.argv[2] ?? "https://github.com/demo/shop/pull/214";
 const report = await assessPullRequest(
@@ -12,7 +13,7 @@ const report = await assessPullRequest(
     redaction: "strict"
   },
   {
-    client: new CoralCliClient(process.env.CORAL_BIN, 20_000),
+    client: new CoralCliClient(process.env.CORAL_BIN, 20_000, process.env.CORAL_QUERY_PROFILE === "live" ? "live" : "demo"),
     now: new Date("2026-05-26T12:00:00Z")
   }
 );
