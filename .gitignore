@@ -7,3 +7,4 @@ test-results/
 .env.*
 apps/web/.vite/
 reports/
+*.log
