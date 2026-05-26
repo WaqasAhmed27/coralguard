@@ -72,7 +72,11 @@ SELECT
     ELSE split_part(filename, '/', 1)
   END AS service,
   NULL AS route,
-  CASE WHEN filename LIKE '%package.json' THEN 'unknown-package' ELSE NULL END AS dependency_name,
+  CASE
+    WHEN filename LIKE 'packages/payments/package.json' THEN 'payment-retry'
+    WHEN filename LIKE '%package.json' THEN 'unknown-package'
+    ELSE NULL
+  END AS dependency_name,
   CASE
     WHEN filename LIKE '%payment%' OR filename LIKE '%checkout%' OR filename LIKE '%auth%' OR filename LIKE '%deploy%' THEN 'critical'
     WHEN filename LIKE '%package.json' THEN 'high'
@@ -131,6 +135,7 @@ WITH changed AS (
 SELECT coverage.file_path, coverage.before_percent, coverage.after_percent, coverage.changed_at
 FROM ci_artifacts.coverage_changes AS coverage
 JOIN changed ON coverage.file_path = changed.file_path
+WHERE coverage.pr_number = :pr_number
 LIMIT 50`,
     liveSql: `
 WITH changed AS (
@@ -141,6 +146,7 @@ WITH changed AS (
 SELECT coverage.file_path, coverage.before_percent, coverage.after_percent, coverage.changed_at
 FROM ci_artifacts.coverage_changes AS coverage
 JOIN changed ON coverage.file_path = changed.file_path
+WHERE coverage.pr_number = :pr_number
 LIMIT 50`
   },
   "risk.recent_errors_by_service": {

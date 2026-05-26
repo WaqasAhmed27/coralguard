@@ -1,3 +1,5 @@
 {"pr_number":214,"file_path":"services/payments/retry.ts","before_percent":91.2,"after_percent":82.4,"changed_at":"2026-05-26T07:45:00Z"}
 {"pr_number":214,"file_path":"services/checkout/confirm.ts","before_percent":88.1,"after_percent":87.6,"changed_at":"2026-05-26T07:45:00Z"}
 {"pr_number":7,"file_path":"README.md","before_percent":0,"after_percent":0,"changed_at":"2026-05-24T11:00:00Z"}
+{"pr_number":1,"file_path":"services/payments/retry.ts","before_percent":91.2,"after_percent":82.4,"changed_at":"2026-05-26T07:45:00Z"}
+{"pr_number":1,"file_path":"services/checkout/confirm.ts","before_percent":88.1,"after_percent":87.6,"changed_at":"2026-05-26T07:45:00Z"}
