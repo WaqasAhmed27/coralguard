@@ -103,8 +103,15 @@ WITH changed AS (
   FROM github.pull_request_files
   WHERE owner = :owner AND repo = :repo AND pr_number = :pr_number
 )
-SELECT incident_id, channel, service, file_path, summary, severity, occurred_at
-FROM slack_incidents.incidents
+SELECT DISTINCT
+  incidents.incident_id,
+  incidents.channel,
+  incidents.service,
+  incidents.file_path,
+  incidents.summary,
+  incidents.severity,
+  incidents.occurred_at
+FROM slack_incidents.incidents AS incidents
 JOIN changed ON incidents.service = changed.service OR incidents.file_path = changed.file_path
 ORDER BY occurred_at DESC
 LIMIT 25`
@@ -112,7 +119,7 @@ LIMIT 25`
   "risk.support_tickets_by_keyword": {
     id: "risk.support_tickets_by_keyword",
     label: "Support ticket clusters for affected services",
-    sources: ["support"],
+    sources: ["github", "support"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service
@@ -129,7 +136,7 @@ LIMIT 10`
   "risk.flag_exposure_by_service": {
     id: "risk.flag_exposure_by_service",
     label: "Feature flag rollout exposure",
-    sources: ["flags"],
+    sources: ["github", "flags"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service

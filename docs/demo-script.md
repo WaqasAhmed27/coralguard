@@ -11,6 +11,10 @@
 
 Optional Coral validation:
 
-```bash
-./scripts/install-demo-sources.sh
+```powershell
+$env:CORAL_CONFIG_DIR = "E:\OneDrive\Desktop\Coral\.coral-config"
+powershell -ExecutionPolicy Bypass -File .\scripts\install-demo-sources.ps1
+npm run demo:coral
 ```
+
+The Windows Coral CLI can live at `.tools/coral/coral.exe`; the app discovers it automatically or uses `CORAL_BIN` when set.

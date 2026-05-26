@@ -1,0 +1,60 @@
+name: github
+version: 0.1.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM github.pull_requests LIMIT 1
+  - SELECT * FROM github.pull_request_files LIMIT 1
+tables:
+  - name: pull_requests
+    description: Seeded GitHub pull request metadata
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/github/
+      glob: "pull_requests.jsonl"
+    columns:
+      - name: owner
+        type: Utf8
+      - name: repo
+        type: Utf8
+      - name: pr_number
+        type: Int64
+      - name: title
+        type: Utf8
+      - name: body
+        type: Utf8
+      - name: author
+        type: Utf8
+      - name: head_sha
+        type: Utf8
+      - name: base_branch
+        type: Utf8
+      - name: created_at
+        type: Utf8
+      - name: updated_at
+        type: Utf8
+  - name: pull_request_files
+    description: Seeded GitHub changed files with service mapping
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/github/
+      glob: "pull_request_files.jsonl"
+    columns:
+      - name: owner
+        type: Utf8
+      - name: repo
+        type: Utf8
+      - name: pr_number
+        type: Int64
+      - name: file_path
+        type: Utf8
+      - name: additions
+        type: Int64
+      - name: deletions
+        type: Int64
+      - name: service
+        type: Utf8
+      - name: route
+        type: Utf8
+      - name: dependency_name
+        type: Utf8
+      - name: criticality
+        type: Utf8

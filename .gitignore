@@ -8,3 +8,6 @@ test-results/
 apps/web/.vite/
 reports/
 *.log
+.tools/
+.coral-config/
+*.local.source.yaml

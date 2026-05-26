@@ -1,0 +1,27 @@
+name: sentry
+version: 0.1.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM sentry.issues LIMIT 1
+tables:
+  - name: issues
+    description: Seeded Sentry-like runtime issues
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/sentry/
+      glob: "issues.jsonl"
+    columns:
+      - name: issue_id
+        type: Utf8
+      - name: title
+        type: Utf8
+      - name: service
+        type: Utf8
+      - name: route
+        type: Utf8
+      - name: event_count_7d
+        type: Int64
+      - name: last_seen_at
+        type: Utf8
+      - name: severity
+        type: Utf8

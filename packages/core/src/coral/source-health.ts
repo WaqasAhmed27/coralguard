@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { SourceHealth } from "../schemas/report.js";
+import { resolveCoralBin } from "./coral-bin.js";
 
 const sources = [
   { name: "github", required: true },
@@ -37,7 +38,7 @@ export async function getSourceHealth(mode: "demo" | "live", missingSources: str
 
 async function canRunCoral(): Promise<boolean> {
   return await new Promise((resolve) => {
-    const child = spawn("coral", ["--version"], { shell: false, stdio: "ignore", windowsHide: true });
+    const child = spawn(resolveCoralBin(), ["--version"], { shell: false, stdio: "ignore", windowsHide: true });
     child.on("error", () => resolve(false));
     child.on("close", (code) => resolve(code === 0));
   });

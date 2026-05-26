@@ -1,0 +1,27 @@
+name: support
+version: 0.1.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM support.ticket_clusters LIMIT 1
+tables:
+  - name: ticket_clusters
+    description: Seeded support-ticket clusters
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/support/
+      glob: "ticket_clusters.jsonl"
+    columns:
+      - name: cluster_id
+        type: Utf8
+      - name: service
+        type: Utf8
+      - name: queue
+        type: Utf8
+      - name: customer_segment
+        type: Utf8
+      - name: ticket_count_7d
+        type: Int64
+      - name: summary
+        type: Utf8
+      - name: latest_ticket_at
+        type: Utf8

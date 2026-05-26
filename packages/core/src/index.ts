@@ -2,6 +2,7 @@ export * from "./assessment/assess-pr.js";
 export * from "./assessment/risk-score.js";
 export * from "./assessment/evidence-normalizer.js";
 export * from "./coral/coral-client.js";
+export * from "./coral/coral-bin.js";
 export * from "./coral/query-registry.js";
 export * from "./coral/source-health.js";
 export * from "./schemas/input.js";

@@ -5,6 +5,7 @@ import path from "node:path";
 import type { ParsedPr } from "../schemas/input.js";
 import { redactForDisplay } from "../security/redact.js";
 import { bindSql, getQuery, type QueryId } from "./query-registry.js";
+import { resolveCoralBin } from "./coral-bin.js";
 
 export type QueryRow = Record<string, unknown>;
 
@@ -13,7 +14,7 @@ export interface CoralClient {
 }
 
 export class CoralCliClient implements CoralClient {
-  constructor(private readonly coralBin = "coral", private readonly timeoutMs = 10_000) {}
+  constructor(private readonly coralBin = resolveCoralBin(), private readonly timeoutMs = 10_000) {}
 
   async runQuery(queryId: QueryId, input: ParsedPr): Promise<QueryRow[]> {
     const query = bindSql(getQuery(queryId), input);

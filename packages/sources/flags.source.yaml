@@ -1,0 +1,23 @@
+name: flags
+version: 0.1.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM flags.rollouts LIMIT 1
+tables:
+  - name: rollouts
+    description: Seeded LaunchDarkly-like rollout data
+    source:
+      location: file:///ABSOLUTE_PATH_TO_DEMO_DATA/flags/
+      glob: "rollouts.jsonl"
+    columns:
+      - name: flag_key
+        type: Utf8
+      - name: service
+        type: Utf8
+      - name: rollout_percent
+        type: Int64
+      - name: segment
+        type: Utf8
+      - name: updated_at
+        type: Utf8
