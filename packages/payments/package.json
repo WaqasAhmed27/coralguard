@@ -1,0 +1,7 @@
+{
+  "name": "@coralguard/payments-demo",
+  "private": true,
+  "dependencies": {
+    "payment-retry": "2.5.0"
+  }
+}
