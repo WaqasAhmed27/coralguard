@@ -7,6 +7,7 @@ import { QueryInspector } from "./features/query-inspector/QueryInspector.js";
 
 export function App() {
   const [prUrl, setPrUrl] = useState("https://github.com/demo/shop/pull/214");
+  const [mode, setMode] = useState<"demo" | "live">("demo");
   const [report, setReport] = useState<AssessmentReport | null>(null);
   const [sources, setSources] = useState<SourceHealth[]>([]);
   const [loading, setLoading] = useState(false);
@@ -14,8 +15,8 @@ export function App() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch("/api/sources/health").then((response) => response.json()).then(setSources).catch(() => setSources([]));
-  }, []);
+    fetch(`/api/sources/health?mode=${mode}`).then((response) => response.json()).then(setSources).catch(() => setSources([]));
+  }, [mode]);
 
   async function runAssessment() {
     setLoading(true);
@@ -25,7 +26,7 @@ export function App() {
       const response = await fetch("/api/assess", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prUrl, mode: "demo", redaction: "strict" })
+        body: JSON.stringify({ prUrl, mode, redaction: "strict" })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Assessment failed.");
@@ -65,6 +66,10 @@ export function App() {
         <section className="assessment-band">
           <div className="input-panel">
             <label htmlFor="pr-url">GitHub PR</label>
+            <div className="mode-toggle" aria-label="Assessment mode">
+              <button className={mode === "demo" ? "active" : ""} onClick={() => setMode("demo")}>Seeded</button>
+              <button className={mode === "live" ? "active" : ""} onClick={() => setMode("live")}>Live Coral</button>
+            </div>
             <div className="input-row">
               <GitPullRequest size={18} />
               <input id="pr-url" value={prUrl} onChange={(event) => setPrUrl(event.target.value)} />

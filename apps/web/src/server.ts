@@ -24,7 +24,10 @@ const root = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 const reportDir = path.join(root, "reports");
 
 function registerRoutes(app: FastifyInstance) {
-  app.get("/api/sources/health", async () => getSourceHealth("demo"));
+  app.get("/api/sources/health", async (request) => {
+    const query = request.query as { mode?: string };
+    return getSourceHealth(query.mode === "live" ? "live" : "demo");
+  });
 
   app.post("/api/assess", async (request, reply) => {
     try {

@@ -97,6 +97,27 @@ h3 {
   gap: 10px;
 }
 
+.mode-toggle {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px;
+  border: 1px solid #33424d;
+  border-radius: 8px;
+  background: #0c1219;
+}
+
+.mode-toggle button {
+  border-color: transparent;
+  background: transparent;
+  color: #8fa1ad;
+  padding: 6px 10px;
+}
+
+.mode-toggle button.active {
+  background: #12a38d;
+  color: #06110f;
+}
+
 .input-row {
   display: grid;
   grid-template-columns: 22px 1fr auto;
