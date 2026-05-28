@@ -13,6 +13,12 @@ Copy-Item .\env.live.example .\.env.live.local
 notepad .\.env.live.local
 ```
 
+Or use the local prompt helper so token values are not echoed:
+
+```powershell
+npm run set:live-secrets
+```
+
 Install the live source config into an E-drive Coral config directory:
 
 ```powershell

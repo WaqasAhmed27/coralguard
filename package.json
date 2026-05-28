@@ -16,6 +16,7 @@
     "demo": "tsx scripts/run-demo-assessment.ts",
     "demo:coral": "tsx scripts/run-coral-live-assessment.ts",
     "install:live-sources": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1",
+    "set:live-secrets": "powershell -ExecutionPolicy Bypass -File scripts/set-live-secrets.ps1",
     "dev:live": "powershell -ExecutionPolicy Bypass -File scripts/run-live-ui.ps1",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
