@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assessPullRequest } from "../src/assessment/assess-pr.js";
+import type { CoralClient } from "../src/coral/coral-client.js";
 
 const now = new Date("2026-05-26T12:00:00Z");
 
@@ -26,5 +27,17 @@ describe("assessment pipeline", () => {
     const degraded = await assessPullRequest({ prUrl: "demo/shop#214", mode: "demo", missingSources: ["ci_artifacts"] }, { now });
     expect(degraded.confidence).toBeLessThan(normal.confidence);
     expect(degraded.sourceHealth.find((source) => source.name === "ci_artifacts")?.status).toBe("optional_skipped");
+  });
+
+  it("marks sources failing when Coral queries fail", async () => {
+    const failingClient: CoralClient = {
+      async runQuery() {
+        throw new Error("upstream unavailable");
+      }
+    };
+    const report = await assessPullRequest({ prUrl: "demo/shop#214", mode: "demo" }, { client: failingClient, now });
+    expect(report.warnings.length).toBeGreaterThan(0);
+    expect(report.sourceHealth.find((source) => source.name === "github")?.status).toBe("failing");
+    expect(report.confidence).toBeLessThan(0.5);
   });
 });

@@ -2,7 +2,7 @@ import { DemoCoralClient, CoralCliClient, type CoralClient } from "../coral/cora
 import { runAssessmentQueries } from "../coral/query-runner.js";
 import { getSourceHealth } from "../coral/source-health.js";
 import { parsePullRequestInput, prInputSchema, type PrInput } from "../schemas/input.js";
-import { assessmentReportSchema, type AssessmentReport } from "../schemas/report.js";
+import { assessmentReportSchema, type AssessmentReport, type QuerySummary, type SourceHealth } from "../schemas/report.js";
 import { normalizeEvidence } from "./evidence-normalizer.js";
 import { calculateRiskScore } from "./risk-score.js";
 import { buildBlastRadius } from "./blast-radius.js";
@@ -26,8 +26,9 @@ export async function assessPullRequest(rawInput: PrInput, options: AssessOption
     const summary = summaries.find((item) => item.id === result.queryId);
     return summary?.sourceNames.some((source) => skippedSources.has(source)) ? { ...result, rows: [] } : result;
   });
+  const effectiveSourceHealth = markFailingSources(sourceHealth, summaries, warnings);
   const evidence = normalizeEvidence(filteredResults, inputConfig.redaction === "strict");
-  const risk = calculateRiskScore(evidence, sourceHealth, options.now ?? new Date());
+  const risk = calculateRiskScore(evidence, effectiveSourceHealth, options.now ?? new Date());
   const partial = {
     assessmentId: `assess_${input.owner}_${input.repo}_${input.prNumber}`,
     input,
@@ -39,7 +40,7 @@ export async function assessPullRequest(rawInput: PrInput, options: AssessOption
     blastRadius: buildBlastRadius(evidence),
     testPlan: buildTestPlan(evidence),
     rollbackPlan: buildRollbackPlan(input, evidence),
-    sourceHealth,
+    sourceHealth: effectiveSourceHealth,
     querySummaries: summaries,
     warnings,
     generatedAt: (options.now ?? new Date()).toISOString()
@@ -48,4 +49,28 @@ export async function assessPullRequest(rawInput: PrInput, options: AssessOption
     ...partial,
     prCommentMarkdown: buildPrCommentMarkdown(partial)
   });
+}
+
+function markFailingSources(sourceHealth: SourceHealth[], summaries: QuerySummary[], warnings: string[]): SourceHealth[] {
+  if (warnings.length === 0) return sourceHealth;
+
+  const failedSources = new Set<string>();
+  for (const summary of summaries) {
+    const failed = warnings.some((warning) => warning.startsWith(`${summary.label} failed:`));
+    if (failed) {
+      summary.sourceNames.forEach((sourceName) => failedSources.add(sourceName));
+    }
+  }
+
+  if (failedSources.size === 0) return sourceHealth;
+
+  return sourceHealth.map((source) =>
+    failedSources.has(source.name)
+      ? {
+          ...source,
+          status: "failing",
+          message: "One or more Coral queries for this source failed; treat the report as degraded."
+        }
+      : source
+  );
 }
