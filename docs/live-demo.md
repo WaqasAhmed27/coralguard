@@ -48,6 +48,12 @@ source validates `slack.channels` through `conversations.list`, which needs:
 `channels:read`, `groups:read`, `mpim:read`, and `im:read`. Include
 `users:read` for the `slack.users` table.
 
+Verify the updated Slack token before rerunning strict install:
+
+```powershell
+npm run check:slack-scopes
+```
+
 ## Run
 
 ```powershell
