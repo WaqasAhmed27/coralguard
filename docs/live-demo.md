@@ -6,28 +6,38 @@ This gives judges a real PR URL and real GitHub PR metadata/files without making
 
 ## Setup
 
+Copy the example env file and paste real values locally:
+
+```powershell
+Copy-Item .\env.live.example .\.env.live.local
+notepad .\.env.live.local
+```
+
 Install the live source config into an E-drive Coral config directory:
 
 ```powershell
-$env:CORAL_CONFIG_DIR = "E:\OneDrive\Desktop\Coral\.coral-live-config"
-powershell -ExecutionPolicy Bypass -File .\scripts\install-live-sources.ps1
+npm run install:live-sources
 ```
 
-The script uses `GITHUB_TOKEN` if set. If not, it uses `gh auth token` without printing the token.
+The script uses `GITHUB_TOKEN` if set. If not, it uses `gh auth token` without printing the token. It installs bundled Coral sources for any provided live credentials and keeps local fallback sources for missing systems.
 
 ## Run
 
 ```powershell
-$env:CORAL_CONFIG_DIR = "E:\OneDrive\Desktop\Coral\.coral-live-config"
-$env:CORAL_QUERY_PROFILE = "live"
+. .\scripts\load-live-env.ps1
 npm run demo:coral -- https://github.com/WaqasAhmed27/coralguard/pull/1
 ```
 
-For the web API, start it with the same environment variables and use `mode: "live"`.
+For the web UI:
+
+```powershell
+npm run dev:live
+```
 
 ## Credential Safety
 
 - Do not commit `.coral-live-config`.
+- Do not commit `.env.live.local`.
 - Do not write tokens into `.env` files unless the file is gitignored.
 - Coral stores source credentials locally.
 - CoralGuard redacts command errors and source text before showing them in reports.

@@ -11,5 +11,6 @@ reports/
 .tools/
 .coral-config/
 .coral-live-config/
+.coral-temp-info/
 *.local.source.yaml
 *.live-fallback.source.yaml
