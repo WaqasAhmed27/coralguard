@@ -19,6 +19,13 @@ Or use the local prompt helper so token values are not echoed:
 npm run set:live-secrets
 ```
 
+If you copied a token block locally, import it from the clipboard without
+printing token values:
+
+```powershell
+npm run import:live-secrets
+```
+
 Install the live source config into an E-drive Coral config directory:
 
 ```powershell
@@ -34,6 +41,11 @@ Sentry, Slack, LaunchDarkly, or Linear credentials are missing:
 ```powershell
 npm run install:live-sources:strict
 ```
+
+If Slack fails with `missing_scope`, update the Slack bot token scopes and
+reinstall the app. The bundled Coral Slack source validates `slack.channels`
+through `conversations.list`, so the token needs channel-read access such as
+`channels:read`; include `users:read` for the `slack.users` table.
 
 ## Run
 

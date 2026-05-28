@@ -59,7 +59,7 @@ export function App() {
           </div>
           <div className="status-pill">
             <Database size={16} />
-            Demo Coral sources
+            {mode === "live" ? "Live Coral sources" : "Demo Coral sources"}
           </div>
         </header>
 

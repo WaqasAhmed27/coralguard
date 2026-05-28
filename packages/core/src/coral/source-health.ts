@@ -6,9 +6,12 @@ const sources = [
   { name: "github", required: true },
   { name: "ci_artifacts", required: true },
   { name: "sentry", required: false },
+  { name: "slack", required: false },
   { name: "slack_incidents", required: false },
   { name: "support", required: false },
+  { name: "launchdarkly", required: false },
   { name: "flags", required: false },
+  { name: "linear", required: false },
   { name: "osv", required: false }
 ];
 

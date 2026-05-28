@@ -21,7 +21,8 @@ export async function assessPullRequest(rawInput: PrInput, options: AssessOption
   const sourceHealth = await getSourceHealth(inputConfig.mode, inputConfig.missingSources);
   const client = options.client ?? (inputConfig.mode === "demo" ? new DemoCoralClient() : new CoralCliClient());
   const skippedSources = new Set(inputConfig.missingSources);
-  const { results, summaries, warnings } = await runAssessmentQueries(client, input);
+  const queryProfile = inputConfig.mode === "live" ? "live" : "demo";
+  const { results, summaries, warnings } = await runAssessmentQueries(client, input, undefined, queryProfile);
   const filteredResults = results.map((result) => {
     const summary = summaries.find((item) => item.id === result.queryId);
     return summary?.sourceNames.some((source) => skippedSources.has(source)) ? { ...result, rows: [] } : result;

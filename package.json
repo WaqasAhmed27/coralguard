@@ -18,6 +18,7 @@
     "check:live-env": "powershell -ExecutionPolicy Bypass -File scripts/check-live-env.ps1",
     "install:live-sources": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1",
     "install:live-sources:strict": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1 --require-live",
+    "import:live-secrets": "powershell -ExecutionPolicy Bypass -File scripts/import-live-secrets-from-clipboard.ps1",
     "set:live-secrets": "powershell -ExecutionPolicy Bypass -File scripts/set-live-secrets.ps1",
     "dev:live": "powershell -ExecutionPolicy Bypass -File scripts/run-live-ui.ps1",
     "typecheck": "tsc -p tsconfig.json --noEmit"

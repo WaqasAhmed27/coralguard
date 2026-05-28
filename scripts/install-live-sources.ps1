@@ -71,10 +71,40 @@ function Install-BundledIfConfigured {
   }
 
   Write-Host "Installing live $SourceName"
-  & $coral source remove $SourceName 2>$null
-  & $coral source add $SourceName
-  & $coral source test $SourceName
+  Invoke-CoralCommand -CommandArgs @("source", "remove", $SourceName) -Quiet $true | Out-Null
+  if (-not (Invoke-CoralCommand -CommandArgs @("source", "add", $SourceName) -Quiet $false)) {
+    if ($RequireLive) {
+      throw "Failed to add required live $SourceName source."
+    }
+    return $false
+  }
+  if (-not (Invoke-CoralCommand -CommandArgs @("source", "test", $SourceName) -Quiet $false)) {
+    if ($RequireLive) {
+      throw "Required live $SourceName source failed validation."
+    }
+    return $false
+  }
   return $true
+}
+
+function Invoke-CoralCommand {
+  param(
+    [string[]]$CommandArgs,
+    [bool]$Quiet
+  )
+
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    if ($Quiet) {
+      & $coral @CommandArgs *> $null
+    } else {
+      & $coral @CommandArgs 2>&1 | ForEach-Object { Write-Host $_ }
+    }
+    return $LASTEXITCODE -eq 0
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
 }
 
 $liveInstalled = @{}
@@ -109,8 +139,16 @@ foreach ($source in $fallbackSources) {
   & $coral source test $source
 }
 
-if ($RequireLive -and (-not $liveInstalled["sentry"] -or -not $liveInstalled["slack"] -or -not $liveInstalled["launchdarkly"] -or -not $liveInstalled["linear"])) {
-  throw "Strict live install did not install every required live source."
+if ($RequireLive) {
+  $requiredInstalled = @("sentry", "slack", "launchdarkly", "linear")
+  foreach ($requiredSource in $requiredInstalled) {
+    if (-not $liveInstalled[$requiredSource]) {
+      throw "Strict live install did not install required live source: $requiredSource"
+    }
+    if (-not (Invoke-CoralCommand -CommandArgs @("source", "test", $requiredSource) -Quiet $false)) {
+      throw "Strict live install validation failed for required live source: $requiredSource"
+    }
+  }
 }
 
 Write-Host "Installed live configured sources plus fallback evidence sources into $env:CORAL_CONFIG_DIR"

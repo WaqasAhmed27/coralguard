@@ -17,6 +17,7 @@ export type QueryDefinition = {
   label: string;
   sources: string[];
   sql: string;
+  liveSources?: string[];
   liveSql?: string;
 };
 
@@ -178,11 +179,25 @@ WITH services AS (
   FROM github.files
   WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 )
-SELECT issue_id, title, service, route, event_count_7d, last_seen_at, severity
-FROM sentry.issues
-JOIN services USING (service)
-WHERE event_count_7d > 0
-ORDER BY event_count_7d DESC
+SELECT
+  issues.id AS issue_id,
+  issues.title,
+  issues.project AS service,
+  NULL AS route,
+  issues.count AS event_count_7d,
+  issues.last_seen AS last_seen_at,
+  issues.level AS severity
+FROM (
+  SELECT id, title, project, count, last_seen, level
+  FROM sentry.issues
+  WHERE query IN ('payments', 'billing', 'checkout', 'auth')
+  LIMIT 50
+) AS issues
+JOIN services
+  ON lower(issues.project) LIKE '%' || lower(services.service) || '%'
+  OR lower(issues.title) LIKE '%' || lower(services.service) || '%'
+WHERE issues.count > 0
+ORDER BY issues.count DESC
 LIMIT 25`
   },
   "risk.related_incidents_by_file": {
@@ -238,6 +253,7 @@ LIMIT 25`
     id: "risk.support_tickets_by_keyword",
     label: "Support ticket clusters for affected services",
     sources: ["github", "support"],
+    liveSources: ["github", "linear"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service
@@ -263,17 +279,28 @@ WITH services AS (
   FROM github.files
   WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 )
-SELECT cluster_id, service, queue, customer_segment, ticket_count_7d, summary, latest_ticket_at
-FROM support.ticket_clusters
-JOIN services USING (service)
-WHERE ticket_count_7d > 0
-ORDER BY ticket_count_7d DESC
+SELECT
+  issues.identifier AS cluster_id,
+  services.service,
+  issues.team_key AS queue,
+  'linear' AS customer_segment,
+  CASE WHEN issues.priority > 0 THEN issues.priority ELSE 1 END AS ticket_count_7d,
+  issues.title AS summary,
+  issues.updated_at AS latest_ticket_at
+FROM linear.issues AS issues
+JOIN services
+  ON lower(issues.title) LIKE '%' || lower(services.service) || '%'
+  OR lower(coalesce(issues.description, '')) LIKE '%' || lower(services.service) || '%'
+  OR lower(coalesce(issues.label_names, '')) LIKE '%' || lower(services.service) || '%'
+WHERE issues.state_type <> 'completed'
+ORDER BY issues.updated_at DESC
 LIMIT 10`
   },
   "risk.flag_exposure_by_service": {
     id: "risk.flag_exposure_by_service",
     label: "Feature flag rollout exposure",
     sources: ["github", "flags"],
+    liveSources: ["github", "launchdarkly"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service
@@ -297,9 +324,18 @@ WITH services AS (
   FROM github.files
   WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
 )
-SELECT flag_key, service, rollout_percent, segment, updated_at
-FROM flags.rollouts
-JOIN services USING (service)
+SELECT
+  env.flag_key,
+  services.service,
+  CASE WHEN env.enabled THEN 100 ELSE 0 END AS rollout_percent,
+  env.environment_key AS segment,
+  env.last_modified AS updated_at
+FROM launchdarkly.flag_environments AS env
+JOIN services
+  ON lower(env.flag_key) LIKE '%' || lower(services.service) || '%'
+  OR lower(coalesce(env.name, '')) LIKE '%' || lower(services.service) || '%'
+  OR lower(coalesce(env.tags, '')) LIKE '%' || lower(services.service) || '%'
+WHERE env.project_key = 'default' AND env.environment_key = 'production'
 LIMIT 25`
   },
   "risk.vulnerabilities_by_dependency": {
@@ -361,6 +397,10 @@ export function getQuery(id: QueryId): QueryDefinition {
 }
 
 export type QueryProfile = "demo" | "live";
+
+export function sourcesForProfile(definition: QueryDefinition, profile: QueryProfile = "demo"): string[] {
+  return profile === "live" && definition.liveSources ? definition.liveSources : definition.sources;
+}
 
 export function bindSql(definition: QueryDefinition, input: ParsedPr, profile: QueryProfile = "demo"): string {
   const sql = profile === "live" && definition.liveSql ? definition.liveSql : definition.sql;
