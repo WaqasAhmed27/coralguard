@@ -1,3 +1,10 @@
+$RequireLive = $false
+foreach ($arg in $args) {
+  if ($arg -eq "--require-live" -or $arg -eq "-RequireLive") {
+    $RequireLive = $true
+  }
+}
+
 $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 
@@ -13,10 +20,33 @@ $demo = (Join-Path $root "packages/sources/demo_data").Replace("\", "/")
 New-Item -ItemType Directory -Force -Path $liveConfig | Out-Null
 $env:CORAL_CONFIG_DIR = (Resolve-Path $liveConfig).Path
 
+if ($RequireLive) {
+  $requiredLive = @(
+    "SENTRY_ORG",
+    "SENTRY_TOKEN",
+    "SLACK_TOKEN",
+    "LAUNCHDARKLY_TOKEN",
+    "LINEAR_API_KEY"
+  )
+  $missingLive = @()
+  foreach ($key in $requiredLive) {
+    if (-not [Environment]::GetEnvironmentVariable($key, "Process")) {
+      $missingLive += $key
+    }
+  }
+  if ($missingLive.Count -gt 0) {
+    throw "Refusing strict live install because these env vars are missing: $($missingLive -join ', ')"
+  }
+}
+
 if (-not $env:GITHUB_TOKEN) {
-  $ghToken = (& gh auth token 2>$null)
-  if ($LASTEXITCODE -eq 0 -and $ghToken) {
-    $env:GITHUB_TOKEN = $ghToken.Trim()
+  try {
+    $ghToken = (& gh auth token 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $ghToken) {
+      $env:GITHUB_TOKEN = $ghToken.Trim()
+    }
+  } catch {
+    $ghToken = ""
   }
 }
 
@@ -77,6 +107,10 @@ foreach ($source in $fallbackSources) {
   & $coral source lint $out
   & $coral source add --file $out
   & $coral source test $source
+}
+
+if ($RequireLive -and (-not $liveInstalled["sentry"] -or -not $liveInstalled["slack"] -or -not $liveInstalled["launchdarkly"] -or -not $liveInstalled["linear"])) {
+  throw "Strict live install did not install every required live source."
 }
 
 Write-Host "Installed live configured sources plus fallback evidence sources into $env:CORAL_CONFIG_DIR"

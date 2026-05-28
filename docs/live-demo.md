@@ -22,10 +22,18 @@ npm run set:live-secrets
 Install the live source config into an E-drive Coral config directory:
 
 ```powershell
+npm run check:live-env
 npm run install:live-sources
 ```
 
 The script uses `GITHUB_TOKEN` if set. If not, it uses `gh auth token` without printing the token. It installs bundled Coral sources for any provided live credentials and keeps local fallback sources for missing systems.
+
+For a true all-live demo, use the strict installer. It refuses to continue if
+Sentry, Slack, LaunchDarkly, or Linear credentials are missing:
+
+```powershell
+npm run install:live-sources:strict
+```
 
 ## Run
 
