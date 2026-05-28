@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { SourceHealth } from "../schemas/report.js";
+import { redactForDisplay } from "../security/redact.js";
 import { resolveCoralBin } from "./coral-bin.js";
 
 const sources = [
@@ -30,13 +31,17 @@ export async function getSourceHealth(mode: "demo" | "live", missingSources: str
   }
 
   const coralAvailable = await canRunCoral();
-  return sources.map((source) => ({
-    name: source.name,
-    required: source.required,
-    mode: "live",
-    status: coralAvailable ? "connected" : "not_installed",
-    message: coralAvailable ? "Coral CLI detected." : "Coral CLI is not installed or not on PATH."
-  }));
+  if (!coralAvailable) {
+    return sources.map((source) => ({
+      name: source.name,
+      required: source.required,
+      mode: "live",
+      status: "not_installed",
+      message: "Coral CLI is not installed or not on PATH."
+    }));
+  }
+
+  return await Promise.all(sources.map((source) => testLiveSource(source.name, source.required)));
 }
 
 async function canRunCoral(): Promise<boolean> {
@@ -44,5 +49,56 @@ async function canRunCoral(): Promise<boolean> {
     const child = spawn(resolveCoralBin(), ["--version"], { shell: false, stdio: "ignore", windowsHide: true });
     child.on("error", () => resolve(false));
     child.on("close", (code) => resolve(code === 0));
+  });
+}
+
+async function testLiveSource(name: string, required: boolean): Promise<SourceHealth> {
+  const result = await runCoral(["source", "test", name], 15_000);
+  if (result.ok) {
+    return {
+      name,
+      required,
+      mode: "live",
+      status: "connected",
+      message: "Coral source validation passed."
+    };
+  }
+
+  const output = result.output.toLowerCase();
+  const status = output.includes("was not found") || output.includes("source not found") ? "not_installed" : "failing";
+  return {
+    name,
+    required,
+    mode: "live",
+    status,
+    message: redactForDisplay(result.output || "Coral source validation failed.")
+  };
+}
+
+async function runCoral(args: string[], timeoutMs: number): Promise<{ ok: boolean; output: string }> {
+  return await new Promise((resolve) => {
+    const child = spawn(resolveCoralBin(), args, { shell: false, stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+    let output = "";
+    const timeout = setTimeout(() => {
+      child.kill("SIGTERM");
+      resolve({ ok: false, output: `Coral command timed out after ${timeoutMs}ms.` });
+    }, timeoutMs);
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      output += chunk;
+    });
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      resolve({ ok: false, output: error.message });
+    });
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      resolve({ ok: code === 0, output });
+    });
   });
 }
