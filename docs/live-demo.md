@@ -43,9 +43,10 @@ npm run install:live-sources:strict
 ```
 
 If Slack fails with `missing_scope`, update the Slack bot token scopes and
-reinstall the app. The bundled Coral Slack source validates `slack.channels`
-through `conversations.list`, so the token needs channel-read access such as
-`channels:read`; include `users:read` for the `slack.users` table.
+reinstall the app. The current token has only `incoming-webhook`; Coral's Slack
+source validates `slack.channels` through `conversations.list`, which needs:
+`channels:read`, `groups:read`, `mpim:read`, and `im:read`. Include
+`users:read` for the `slack.users` table.
 
 ## Run
 
