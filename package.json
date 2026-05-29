@@ -16,6 +16,7 @@
     "demo": "tsx scripts/run-demo-assessment.ts",
     "demo:coral": "tsx scripts/run-coral-live-assessment.ts",
     "check:live-env": "powershell -ExecutionPolicy Bypass -File scripts/check-live-env.ps1",
+    "check:live-readiness": "powershell -ExecutionPolicy Bypass -File scripts/check-live-readiness.ps1",
     "check:slack-scopes": "powershell -ExecutionPolicy Bypass -File scripts/check-slack-scopes.ps1",
     "install:live-sources": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1",
     "install:live-sources:strict": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1 --require-live",

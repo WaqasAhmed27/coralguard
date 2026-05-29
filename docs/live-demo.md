@@ -60,6 +60,12 @@ Verify the updated Slack token before rerunning strict install:
 npm run check:slack-scopes
 ```
 
+Or run the combined strict-live readiness gate:
+
+```powershell
+npm run check:live-readiness
+```
+
 ## Run
 
 ```powershell
