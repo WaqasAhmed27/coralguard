@@ -48,6 +48,12 @@ source validates `slack.channels` through `conversations.list`, which needs:
 `channels:read`, `groups:read`, `mpim:read`, and `im:read`. Include
 `users:read` for the `slack.users` table.
 
+You can use [slack-coralguard-manifest.yaml](slack-coralguard-manifest.yaml) as
+a Slack app manifest template, or add the scopes manually under Slack app
+settings > OAuth & Permissions > Bot Token Scopes. After changing scopes, click
+Reinstall to Workspace and copy the new `xoxb-...` bot token into
+`.env.live.local`.
+
 Verify the updated Slack token before rerunning strict install:
 
 ```powershell
