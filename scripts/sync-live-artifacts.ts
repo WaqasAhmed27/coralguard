@@ -11,6 +11,12 @@ const prUrl = process.argv[2] ?? process.env.LIVE_DEMO_PR_URL;
 const createMode = process.argv.includes("--create") || process.env.CORAL_LIVE_CREATE === "1";
 if (!prUrl) throw new Error("Usage: npm run sync:live-artifacts -- <PR_URL> [--create]");
 
+const createLinear = createMode && process.env.CORAL_LIVE_CREATE_LINEAR !== "0";
+const createLaunchDarkly = createMode && process.env.CORAL_LIVE_CREATE_LAUNCHDARKLY_FLAG === "1";
+const postSlack = createMode && process.env.CORAL_LIVE_POST_SLACK === "1";
+const allowCreateSentryProject = createMode && process.env.CORAL_LIVE_CREATE_SENTRY_PROJECT === "1";
+const sendSentryEvent = createMode && process.env.CORAL_LIVE_SEND_SENTRY_EVENT === "1";
+
 const parsed = parsePrUrl(prUrl);
 const artifactRoot = path.join(root, "packages", "sources", "live_artifacts");
 const marker = `CG-LIVE-DEMO-${parsed.owner}-${parsed.repo}-${parsed.prNumber}`.replace(/[^A-Za-z0-9_-]/g, "-");
@@ -63,9 +69,9 @@ await writeJsonl(path.join(artifactRoot, "slack", "incidents.jsonl"), slackIncid
 await writeJsonl(path.join(artifactRoot, "osv", "vulnerabilities.jsonl"), await fetchOsvRows("minimist", "0.0.8"));
 
 const liveActions = await Promise.allSettled([
-  ensureLinearIssue(marker, createMode),
-  ensureLaunchDarklyFlag(marker, createMode),
-  ensureSentryEvent(marker, createMode)
+  ensureLinearIssue(marker, createLinear),
+  ensureLaunchDarklyFlag(marker, createLaunchDarkly),
+  ensureSentryEvent(marker, { createProject: allowCreateSentryProject, sendEvent: sendSentryEvent })
 ]);
 
 console.log(JSON.stringify({
@@ -118,10 +124,10 @@ function coverageRows(prNumber: number, files: string[], timestamp: string) {
 async function ensureSlackIncident(markerText: string, shouldCreate: boolean) {
   const token = process.env.SLACK_TOKEN;
   if (!token) return null;
-  const channel = process.env.SLACK_CHANNEL_ID ?? await findOrCreateSlackChannel(token, "coralguard-live-demo", shouldCreate);
+  const channel = process.env.SLACK_CHANNEL_ID ?? await findOrCreateSlackChannel(token, "coralguard-live-demo", shouldCreate && postSlack);
   if (!channel) return null;
   const messageText = `${markerText} incident payments services/payments/retry.ts duplicate charge after checkout retry severity critical`;
-  if (shouldCreate) {
+  if (postSlack) {
     await slackApi("chat.postMessage", token, { channel, text: messageText });
   }
   const history = await slackApi("conversations.history", token, { channel, limit: 20 }) as {
@@ -201,6 +207,7 @@ async function ensureLaunchDarklyFlag(markerText: string, shouldCreate: boolean)
   if (!token) return "launchdarkly skipped";
   if (!shouldCreate) return "launchdarkly create skipped";
   const flagKey = "payments-live-demo-checkout-retry";
+  const environmentKey = process.env.CORAL_LIVE_LD_ENVIRONMENT ?? "test";
   const body = {
     key: flagKey,
     name: `${markerText} payments checkout retry`,
@@ -218,21 +225,21 @@ async function ensureLaunchDarklyFlag(markerText: string, shouldCreate: boolean)
   const patch = await fetch(`https://app.launchdarkly.com/api/v2/flags/default/${flagKey}`, {
     method: "PATCH",
     headers: { authorization: token, "content-type": "application/json; domain-model=launchdarkly.semanticpatch" },
-    body: JSON.stringify({ environmentKey: "production", instructions: [{ kind: "turnFlagOn" }] })
+    body: JSON.stringify({ environmentKey, instructions: [{ kind: "turnFlagOn" }] })
   });
   if (!patch.ok && patch.status !== 404) throw new Error(`LaunchDarkly flag patch failed: ${patch.status}`);
-  return "launchdarkly flag ready";
+  return `launchdarkly flag ready in ${environmentKey}`;
 }
 
-async function ensureSentryEvent(markerText: string, shouldCreate: boolean) {
+async function ensureSentryEvent(markerText: string, options: { createProject: boolean; sendEvent: boolean }) {
   const org = process.env.SENTRY_ORG;
   const token = process.env.SENTRY_TOKEN;
   if (!org || !token) return "sentry skipped";
-  if (!shouldCreate) return "sentry create skipped";
+  if (!options.sendEvent) return "sentry event send skipped";
   const projects = await sentryApi(token, `/api/0/organizations/${org}/projects/`) as Array<{ slug: string }>;
   const project = projects.find((item) => item.slug.includes("payments") || item.slug.includes("checkout"))
-    ?? await createSentryProject(org, token);
-  if (!project) return "sentry no project";
+    ?? (options.createProject ? await createSentryProject(org, token) : null);
+  if (!project) return "sentry no payments/checkout project";
   const keys = await sentryApi(token, `/api/0/projects/${org}/${project.slug}/keys/`) as Array<{ dsn?: { public?: string } }>;
   const dsn = keys[0]?.dsn?.public;
   if (!dsn) return "sentry no dsn";

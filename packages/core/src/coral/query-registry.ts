@@ -331,12 +331,19 @@ SELECT
   CASE WHEN env.enabled THEN 100 ELSE 0 END AS rollout_percent,
   env.environment_key AS segment,
   env.last_modified AS updated_at
-FROM launchdarkly.flag_environments AS env
+FROM (
+  SELECT flag_key, name, tags, enabled, environment_key, last_modified
+  FROM launchdarkly.flag_environments
+  WHERE project_key = 'default' AND environment_key = 'production'
+  UNION ALL
+  SELECT flag_key, name, tags, enabled, environment_key, last_modified
+  FROM launchdarkly.flag_environments
+  WHERE project_key = 'default' AND environment_key = 'test'
+) AS env
 JOIN services
   ON lower(env.flag_key) LIKE '%' || lower(services.service) || '%'
   OR lower(coalesce(env.name, '')) LIKE '%' || lower(services.service) || '%'
   OR lower(coalesce(env.tags, '')) LIKE '%' || lower(services.service) || '%'
-WHERE env.project_key = 'default' AND env.environment_key = 'production'
 LIMIT 25`
   },
   "risk.vulnerabilities_by_dependency": {
