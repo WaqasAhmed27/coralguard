@@ -25,15 +25,6 @@ const sourceNodes = [
   { id: "osv", label: "OSV", metric: "2 vulns", icon: PackageSearch }
 ];
 
-const packets = [
-  { label: "diff", delay: "0s", top: "158px" },
-  { label: "ci", delay: "0.45s", top: "176px" },
-  { label: "err", delay: "0.9s", top: "194px" },
-  { label: "inc", delay: "1.35s", top: "158px" },
-  { label: "flag", delay: "1.8s", top: "176px" },
-  { label: "vuln", delay: "2.25s", top: "194px" }
-];
-
 export function MotionDemo({ report, sources }: { report: AssessmentReport | null; sources: SourceHealth[] }) {
   const score = report?.riskScore ?? 100;
   const evidenceCount = report?.evidence.length ?? 49;
@@ -58,6 +49,17 @@ export function MotionDemo({ report, sources }: { report: AssessmentReport | nul
           <span>PR intake</span>
           <span>Coral SQL join</span>
           <span>Risk verdict</span>
+        </div>
+        <div className="scan-packet-lane">
+          {["diff", "ci", "err", "inc", "flag", "vuln"].map((label, index) => (
+            <span
+              className="lane-packet"
+              key={label}
+              style={{ "--packet-delay": `${index * 0.42}s` } as CSSProperties}
+            >
+              {label}
+            </span>
+          ))}
         </div>
         <div className="scan-grid">
           <div className="pr-node">
@@ -93,16 +95,6 @@ export function MotionDemo({ report, sources }: { report: AssessmentReport | nul
             <path className="scan-line line-g" d="M380 236 C328 290 260 300 190 276" />
             <path className="scan-line line-h" d="M540 236 C596 292 670 302 738 276" />
           </svg>
-
-          {packets.map((packet) => (
-            <span
-              className="evidence-packet"
-              key={packet.label}
-              style={{ "--packet-delay": packet.delay, "--packet-top": packet.top } as CSSProperties}
-            >
-              <span>{packet.label}</span>
-            </span>
-          ))}
 
           <div className="source-orbit">
             {sourceNodes.map((source, index) => {
