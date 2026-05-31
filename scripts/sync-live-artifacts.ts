@@ -271,14 +271,16 @@ async function createSentryProject(org: string, token: string) {
   const teams = await sentryApi(token, `/api/0/organizations/${org}/teams/`) as Array<{ slug: string }>;
   const team = teams[0];
   if (!team) return null;
+  const slug = process.env.CORAL_LIVE_SENTRY_PROJECT_SLUG ?? "coralguard-payments";
+  const name = process.env.CORAL_LIVE_SENTRY_PROJECT_NAME ?? "CoralGuard Payments";
   const response = await fetch(`https://sentry.io/api/0/teams/${org}/${team.slug}/projects/`, {
     method: "POST",
     headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify({ name: "payments", slug: "payments", platform: "javascript" })
+    body: JSON.stringify({ name, slug, platform: "javascript" })
   });
   if (!response.ok && response.status !== 409) throw new Error(`Sentry project create failed: ${response.status}`);
   const projects = await sentryApi(token, `/api/0/organizations/${org}/projects/`) as Array<{ slug: string }>;
-  return projects.find((item) => item.slug === "payments") ?? projects[0] ?? null;
+  return projects.find((item) => item.slug === slug) ?? projects.find((item) => item.slug.includes("payments")) ?? projects[0] ?? null;
 }
 
 async function sendSentryStoreEvent(dsn: string, event: Record<string, unknown>) {

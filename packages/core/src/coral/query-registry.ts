@@ -190,7 +190,19 @@ SELECT
 FROM (
   SELECT id, title, project, count, last_seen, level
   FROM sentry.issues
-  WHERE query IN ('payments', 'billing', 'checkout', 'auth')
+  WHERE query = 'payments'
+  UNION ALL
+  SELECT id, title, project, count, last_seen, level
+  FROM sentry.issues
+  WHERE query = 'billing'
+  UNION ALL
+  SELECT id, title, project, count, last_seen, level
+  FROM sentry.issues
+  WHERE query = 'checkout'
+  UNION ALL
+  SELECT id, title, project, count, last_seen, level
+  FROM sentry.issues
+  WHERE query = 'auth'
   LIMIT 50
 ) AS issues
 JOIN services
