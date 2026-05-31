@@ -1,0 +1,3 @@
+services/payments/ @payments-platform
+services/checkout/ @checkout-platform
+packages/payments/ @payments-platform

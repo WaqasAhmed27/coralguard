@@ -204,6 +204,7 @@ LIMIT 25`
     id: "risk.related_incidents_by_file",
     label: "Historical incidents related to changed files",
     sources: ["github", "slack_incidents"],
+    liveSources: ["github", "slack", "slack_incidents"],
     sql: `
 WITH changed AS (
   SELECT file_path, service
@@ -342,6 +343,7 @@ LIMIT 25`
     id: "risk.vulnerabilities_by_dependency",
     label: "Dependency vulnerabilities introduced by PR",
     sources: ["github", "ci_artifacts", "osv"],
+    liveSources: ["github", "ci_artifacts", "osv"],
     sql: `
 WITH changed_deps AS (
   SELECT dependency_name, from_version, to_version

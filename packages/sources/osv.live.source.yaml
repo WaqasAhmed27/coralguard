@@ -1,0 +1,25 @@
+name: osv
+version: 0.2.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM osv.vulnerabilities LIMIT 1
+tables:
+  - name: vulnerabilities
+    description: Live OSV vulnerability responses for dependency changes in the current demo PR
+    source:
+      location: file://ABSOLUTE_PATH_TO_LIVE_ARTIFACTS/osv/
+      glob: "vulnerabilities.jsonl"
+    columns:
+      - name: osv_id
+        type: Utf8
+      - name: package_name
+        type: Utf8
+      - name: affected_version
+        type: Utf8
+      - name: severity
+        type: Utf8
+      - name: summary
+        type: Utf8
+      - name: published_at
+        type: Utf8

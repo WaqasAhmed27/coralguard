@@ -20,6 +20,8 @@
     "check:slack-scopes": "powershell -ExecutionPolicy Bypass -File scripts/check-slack-scopes.ps1",
     "install:live-sources": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1",
     "install:live-sources:strict": "powershell -ExecutionPolicy Bypass -File scripts/install-live-sources.ps1 --require-live",
+    "install:live-artifacts": "powershell -ExecutionPolicy Bypass -File scripts/install-live-artifact-sources.ps1",
+    "sync:live-artifacts": "tsx scripts/sync-live-artifacts.ts",
     "import:live-secrets": "powershell -ExecutionPolicy Bypass -File scripts/import-live-secrets-from-clipboard.ps1",
     "set:live-secrets": "powershell -ExecutionPolicy Bypass -File scripts/set-live-secrets.ps1",
     "dev:live": "powershell -ExecutionPolicy Bypass -File scripts/run-live-ui.ps1",

@@ -17,7 +17,7 @@ export interface CoralClient {
 export class CoralCliClient implements CoralClient {
   constructor(
     private readonly coralBin = resolveCoralBin(),
-    private readonly timeoutMs = 10_000,
+    private readonly timeoutMs = Number(process.env.CORAL_QUERY_TIMEOUT_MS ?? 10_000),
     private readonly profile: QueryProfile = process.env.CORAL_QUERY_PROFILE === "live" ? "live" : "demo"
   ) {}
 

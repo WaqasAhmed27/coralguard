@@ -13,5 +13,6 @@ reports/
 .coral-config/
 .coral-live-config/
 .coral-temp-info/
+packages/sources/live_artifacts/
 *.local.source.yaml
 *.live-fallback.source.yaml
