@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import type { AssessmentReport, SourceHealth } from "@coralguard/core";
 import { SourceHealthPanel } from "./features/assessment/SourceHealthPanel.js";
+import { MotionDemo } from "./features/demo/MotionDemo.js";
 import { ReportView } from "./features/report/ReportView.js";
 import { QueryInspector } from "./features/query-inspector/QueryInspector.js";
 
@@ -84,6 +85,7 @@ export function App() {
           </button>
           <nav aria-label="Operational sections">
             <button type="button" onClick={() => scrollToSection("dashboard")}>Dashboard</button>
+            <button type="button" onClick={() => scrollToSection("demo")}>Demo</button>
             <button type="button" onClick={() => scrollToSection("evidence")}>Incidents</button>
             <button type="button" onClick={() => scrollToSection("queries")}>Analytics</button>
             <button type="button" onClick={() => scrollToSection("sources")}>Nodes</button>
@@ -162,6 +164,10 @@ export function App() {
         </section>
 
         {error ? <div className="error-box">{error}</div> : null}
+
+        <div id="demo">
+          <MotionDemo report={report} sources={visibleSources} />
+        </div>
 
         {report ? (
           <>
