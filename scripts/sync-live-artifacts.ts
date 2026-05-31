@@ -55,7 +55,10 @@ await writeJsonl(path.join(artifactRoot, "ci", "codeowners.jsonl"), [
   { path_prefix: "packages/payments/", owner_team: "payments-platform", on_call: "payments-primary" }
 ]);
 
-const slackIncident = await ensureSlackIncident(marker, createMode);
+const slackIncident = await ensureSlackIncident(marker, createMode).catch((error) => {
+  console.error(`Slack incident sync skipped: ${redact(String(error))}`);
+  return null;
+});
 await writeJsonl(path.join(artifactRoot, "slack", "incidents.jsonl"), slackIncident ? [slackIncident] : []);
 await writeJsonl(path.join(artifactRoot, "osv", "vulnerabilities.jsonl"), await fetchOsvRows("minimist", "0.0.8"));
 
@@ -115,7 +118,7 @@ function coverageRows(prNumber: number, files: string[], timestamp: string) {
 async function ensureSlackIncident(markerText: string, shouldCreate: boolean) {
   const token = process.env.SLACK_TOKEN;
   if (!token) return null;
-  const channel = await findOrCreateSlackChannel(token, "coralguard-live-demo", shouldCreate);
+  const channel = process.env.SLACK_CHANNEL_ID ?? await findOrCreateSlackChannel(token, "coralguard-live-demo", shouldCreate);
   if (!channel) return null;
   const messageText = `${markerText} incident payments services/payments/retry.ts duplicate charge after checkout retry severity critical`;
   if (shouldCreate) {
@@ -214,7 +217,7 @@ async function ensureLaunchDarklyFlag(markerText: string, shouldCreate: boolean)
   if (!created.ok && created.status !== 409) throw new Error(`LaunchDarkly flag create failed: ${created.status}`);
   const patch = await fetch(`https://app.launchdarkly.com/api/v2/flags/default/${flagKey}`, {
     method: "PATCH",
-    headers: { authorization: token, "content-type": "application/json" },
+    headers: { authorization: token, "content-type": "application/json; domain-model=launchdarkly.semanticpatch" },
     body: JSON.stringify({ environmentKey: "production", instructions: [{ kind: "turnFlagOn" }] })
   });
   if (!patch.ok && patch.status !== 404) throw new Error(`LaunchDarkly flag patch failed: ${patch.status}`);
@@ -227,7 +230,8 @@ async function ensureSentryEvent(markerText: string, shouldCreate: boolean) {
   if (!org || !token) return "sentry skipped";
   if (!shouldCreate) return "sentry create skipped";
   const projects = await sentryApi(token, `/api/0/organizations/${org}/projects/`) as Array<{ slug: string }>;
-  const project = projects.find((item) => item.slug.includes("payments") || item.slug.includes("checkout")) ?? projects[0];
+  const project = projects.find((item) => item.slug.includes("payments") || item.slug.includes("checkout"))
+    ?? await createSentryProject(org, token);
   if (!project) return "sentry no project";
   const keys = await sentryApi(token, `/api/0/projects/${org}/${project.slug}/keys/`) as Array<{ dsn?: { public?: string } }>;
   const dsn = keys[0]?.dsn?.public;
@@ -254,6 +258,20 @@ async function sentryApi(token: string, apiPath: string) {
   });
   if (!response.ok) throw new Error(`Sentry API failed: ${response.status}`);
   return await response.json();
+}
+
+async function createSentryProject(org: string, token: string) {
+  const teams = await sentryApi(token, `/api/0/organizations/${org}/teams/`) as Array<{ slug: string }>;
+  const team = teams[0];
+  if (!team) return null;
+  const response = await fetch(`https://sentry.io/api/0/teams/${org}/${team.slug}/projects/`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ name: "payments", slug: "payments", platform: "javascript" })
+  });
+  if (!response.ok && response.status !== 409) throw new Error(`Sentry project create failed: ${response.status}`);
+  const projects = await sentryApi(token, `/api/0/organizations/${org}/projects/`) as Array<{ slug: string }>;
+  return projects.find((item) => item.slug === "payments") ?? projects[0] ?? null;
 }
 
 async function sendSentryStoreEvent(dsn: string, event: Record<string, unknown>) {
