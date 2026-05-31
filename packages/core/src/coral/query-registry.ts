@@ -216,7 +216,7 @@ LIMIT 25`
     id: "risk.related_incidents_by_file",
     label: "Historical incidents related to changed files",
     sources: ["github", "slack_incidents"],
-    liveSources: ["github", "slack", "slack_incidents"],
+    liveSources: ["ci_artifacts", "slack_incidents"],
     sql: `
 WITH changed AS (
   SELECT file_path, service
@@ -238,16 +238,16 @@ LIMIT 25`,
     liveSql: `
 WITH changed AS (
   SELECT
-    filename AS file_path,
+    file_path,
     CASE
-      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
-      WHEN filename LIKE '%checkout%' THEN 'checkout'
-      WHEN filename LIKE '%auth%' THEN 'auth'
-      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
-      ELSE split_part(filename, '/', 1)
+      WHEN file_path LIKE '%payment%' OR file_path LIKE '%billing%' THEN 'payments'
+      WHEN file_path LIKE '%checkout%' THEN 'checkout'
+      WHEN file_path LIKE '%auth%' THEN 'auth'
+      WHEN file_path LIKE 'docs/%' OR file_path LIKE 'README%' THEN 'docs'
+      ELSE split_part(file_path, '/', 1)
     END AS service
-  FROM github.files
-  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+  FROM ci_artifacts.coverage_changes
+  WHERE pr_number = :pr_number
 )
 SELECT DISTINCT
   incidents.incident_id,

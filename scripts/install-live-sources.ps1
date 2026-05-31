@@ -121,7 +121,6 @@ $liveInstalled["datadog"] = Install-BundledIfConfigured "datadog" @("DD_API_KEY"
 # Keep missing product evidence reliable with local Coral fallback sources.
 $fallbackSources = @(
   "ci_artifacts",
-  "support",
   "osv"
 )
 
