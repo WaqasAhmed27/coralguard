@@ -127,6 +127,7 @@ LIMIT 50`
     id: "ci.coverage_for_changed_files",
     label: "Coverage changes for touched files",
     sources: ["github", "ci_artifacts"],
+    liveSources: ["ci_artifacts"],
     sql: `
 WITH changed AS (
   SELECT file_path
@@ -139,21 +140,16 @@ JOIN changed ON coverage.file_path = changed.file_path
 WHERE coverage.pr_number = :pr_number
 LIMIT 50`,
     liveSql: `
-WITH changed AS (
-  SELECT filename AS file_path
-  FROM github.files
-  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
-)
-SELECT coverage.file_path, coverage.before_percent, coverage.after_percent, coverage.changed_at
-FROM ci_artifacts.coverage_changes AS coverage
-JOIN changed ON coverage.file_path = changed.file_path
-WHERE coverage.pr_number = :pr_number
+SELECT file_path, before_percent, after_percent, changed_at
+FROM ci_artifacts.coverage_changes
+WHERE pr_number = :pr_number
 LIMIT 50`
   },
   "risk.recent_errors_by_service": {
     id: "risk.recent_errors_by_service",
     label: "Recent runtime errors in affected services",
     sources: ["github", "sentry"],
+    liveSources: ["ci_artifacts", "sentry"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service
@@ -170,14 +166,14 @@ LIMIT 25`,
 WITH services AS (
   SELECT DISTINCT
     CASE
-      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
-      WHEN filename LIKE '%checkout%' THEN 'checkout'
-      WHEN filename LIKE '%auth%' THEN 'auth'
-      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
-      ELSE split_part(filename, '/', 1)
+      WHEN file_path LIKE '%payment%' OR file_path LIKE '%billing%' THEN 'payments'
+      WHEN file_path LIKE '%checkout%' THEN 'checkout'
+      WHEN file_path LIKE '%auth%' THEN 'auth'
+      WHEN file_path LIKE 'docs/%' OR file_path LIKE 'README%' THEN 'docs'
+      ELSE split_part(file_path, '/', 1)
     END AS service
-  FROM github.files
-  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+  FROM ci_artifacts.coverage_changes
+  WHERE pr_number = :pr_number
 )
 SELECT
   issues.id AS issue_id,
@@ -266,7 +262,7 @@ LIMIT 25`
     id: "risk.support_tickets_by_keyword",
     label: "Support ticket clusters for affected services",
     sources: ["github", "support"],
-    liveSources: ["github", "linear"],
+    liveSources: ["ci_artifacts", "linear"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service
@@ -283,14 +279,14 @@ LIMIT 10`,
 WITH services AS (
   SELECT DISTINCT
     CASE
-      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
-      WHEN filename LIKE '%checkout%' THEN 'checkout'
-      WHEN filename LIKE '%auth%' THEN 'auth'
-      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
-      ELSE split_part(filename, '/', 1)
+      WHEN file_path LIKE '%payment%' OR file_path LIKE '%billing%' THEN 'payments'
+      WHEN file_path LIKE '%checkout%' THEN 'checkout'
+      WHEN file_path LIKE '%auth%' THEN 'auth'
+      WHEN file_path LIKE 'docs/%' OR file_path LIKE 'README%' THEN 'docs'
+      ELSE split_part(file_path, '/', 1)
     END AS service
-  FROM github.files
-  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+  FROM ci_artifacts.coverage_changes
+  WHERE pr_number = :pr_number
 )
 SELECT
   issues.identifier AS cluster_id,
@@ -313,7 +309,7 @@ LIMIT 10`
     id: "risk.flag_exposure_by_service",
     label: "Feature flag rollout exposure",
     sources: ["github", "flags"],
-    liveSources: ["github", "launchdarkly"],
+    liveSources: ["ci_artifacts", "launchdarkly"],
     sql: `
 WITH services AS (
   SELECT DISTINCT service
@@ -328,14 +324,14 @@ LIMIT 25`,
 WITH services AS (
   SELECT DISTINCT
     CASE
-      WHEN filename LIKE '%payment%' OR filename LIKE '%billing%' THEN 'payments'
-      WHEN filename LIKE '%checkout%' THEN 'checkout'
-      WHEN filename LIKE '%auth%' THEN 'auth'
-      WHEN filename LIKE 'docs/%' OR filename LIKE 'README%' THEN 'docs'
-      ELSE split_part(filename, '/', 1)
+      WHEN file_path LIKE '%payment%' OR file_path LIKE '%billing%' THEN 'payments'
+      WHEN file_path LIKE '%checkout%' THEN 'checkout'
+      WHEN file_path LIKE '%auth%' THEN 'auth'
+      WHEN file_path LIKE 'docs/%' OR file_path LIKE 'README%' THEN 'docs'
+      ELSE split_part(file_path, '/', 1)
     END AS service
-  FROM github.files
-  WHERE owner = :owner AND repo = :repo AND pull_number = :pr_number
+  FROM ci_artifacts.coverage_changes
+  WHERE pr_number = :pr_number
 )
 SELECT
   env.flag_key,
