@@ -26,12 +26,12 @@ const sourceNodes = [
 ];
 
 const packets = [
-  { label: "diff", delay: "0s" },
-  { label: "ci", delay: "0.45s" },
-  { label: "err", delay: "0.9s" },
-  { label: "inc", delay: "1.35s" },
-  { label: "flag", delay: "1.8s" },
-  { label: "vuln", delay: "2.25s" }
+  { label: "diff", delay: "0s", top: "158px" },
+  { label: "ci", delay: "0.45s", top: "176px" },
+  { label: "err", delay: "0.9s", top: "194px" },
+  { label: "inc", delay: "1.35s", top: "158px" },
+  { label: "flag", delay: "1.8s", top: "176px" },
+  { label: "vuln", delay: "2.25s", top: "194px" }
 ];
 
 export function MotionDemo({ report, sources }: { report: AssessmentReport | null; sources: SourceHealth[] }) {
@@ -54,6 +54,11 @@ export function MotionDemo({ report, sources }: { report: AssessmentReport | nul
       </div>
 
       <div className="scan-stage" aria-hidden="true">
+        <div className="scan-phase-rail">
+          <span>PR intake</span>
+          <span>Coral SQL join</span>
+          <span>Risk verdict</span>
+        </div>
         <div className="scan-grid">
           <div className="pr-node">
             <GitPullRequest size={24} />
@@ -68,10 +73,14 @@ export function MotionDemo({ report, sources }: { report: AssessmentReport | nul
             <strong>evidence join</strong>
           </div>
 
-          <div className={`verdict-node verdict-${verdict}`}>
+          <div
+            className={`verdict-node verdict-${verdict}`}
+            style={{ "--risk-score": `${score}%` } as CSSProperties}
+          >
             <AlertTriangle size={24} />
             <span>{verdict}</span>
             <strong>{score}/100</strong>
+            <div className="risk-meter"><i /></div>
           </div>
 
           <svg className="scan-lines" viewBox="0 0 920 360" preserveAspectRatio="none">
@@ -89,9 +98,9 @@ export function MotionDemo({ report, sources }: { report: AssessmentReport | nul
             <span
               className="evidence-packet"
               key={packet.label}
-              style={{ "--packet-delay": packet.delay } as CSSProperties}
+              style={{ "--packet-delay": packet.delay, "--packet-top": packet.top } as CSSProperties}
             >
-              {packet.label}
+              <span>{packet.label}</span>
             </span>
           ))}
 
