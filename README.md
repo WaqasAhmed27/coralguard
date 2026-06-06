@@ -160,6 +160,3 @@ See [docs/threat-model.md](docs/threat-model.md) for the concise threat model.
 
 The generated submission video is stored locally under `reports/demo-video/submission/out/coralguard-submission-demo.mp4`. The reports directory is intentionally ignored because it contains generated artifacts.
 
-## License
-
-Hackathon prototype. Add a license before production use.
