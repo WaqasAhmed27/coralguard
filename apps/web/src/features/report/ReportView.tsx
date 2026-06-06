@@ -175,7 +175,7 @@ function ChipGroup({ icon, label, values }: { icon?: React.ReactNode; label: str
     <div className="chip-group">
       <span>{icon}{label}</span>
       <div>
-        {values.length ? values.map((value) => <code key={value}>{value}</code>) : <em>none</em>}
+        {values.length ? values.map((value, index) => <code key={`${value}-${index}`}>{value}</code>) : <em>none</em>}
       </div>
     </div>
   );

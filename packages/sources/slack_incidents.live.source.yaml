@@ -1,0 +1,27 @@
+name: slack_incidents
+version: 0.2.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM slack_incidents.incidents LIMIT 1
+tables:
+  - name: incidents
+    description: Live Slack incident messages normalized from the configured demo channel
+    source:
+      location: file://ABSOLUTE_PATH_TO_LIVE_ARTIFACTS/slack/
+      glob: "incidents.jsonl"
+    columns:
+      - name: incident_id
+        type: Utf8
+      - name: channel
+        type: Utf8
+      - name: service
+        type: Utf8
+      - name: file_path
+        type: Utf8
+      - name: summary
+        type: Utf8
+      - name: severity
+        type: Utf8
+      - name: occurred_at
+        type: Utf8

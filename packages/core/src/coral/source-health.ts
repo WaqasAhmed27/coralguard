@@ -3,7 +3,7 @@ import type { SourceHealth } from "../schemas/report.js";
 import { redactForDisplay } from "../security/redact.js";
 import { resolveCoralBin } from "./coral-bin.js";
 
-const sources = [
+const demoSources = [
   { name: "github", required: true },
   { name: "ci_artifacts", required: true },
   { name: "sentry", required: false },
@@ -16,10 +16,21 @@ const sources = [
   { name: "osv", required: false }
 ];
 
+const liveSources = [
+  { name: "github", required: true },
+  { name: "ci_artifacts", required: true },
+  { name: "sentry", required: false },
+  { name: "slack", required: false },
+  { name: "slack_incidents", required: false },
+  { name: "launchdarkly", required: false },
+  { name: "linear", required: false },
+  { name: "osv", required: false }
+];
+
 export async function getSourceHealth(mode: "demo" | "live", missingSources: string[] = []): Promise<SourceHealth[]> {
   const missing = new Set(missingSources);
   if (mode === "demo") {
-    return sources.map((source) => ({
+    return demoSources.map((source) => ({
       name: source.name,
       required: source.required,
       mode: "seeded",
@@ -32,7 +43,7 @@ export async function getSourceHealth(mode: "demo" | "live", missingSources: str
 
   const coralAvailable = await canRunCoral();
   if (!coralAvailable) {
-    return sources.map((source) => ({
+    return liveSources.map((source) => ({
       name: source.name,
       required: source.required,
       mode: "live",
@@ -41,7 +52,7 @@ export async function getSourceHealth(mode: "demo" | "live", missingSources: str
     }));
   }
 
-  return await Promise.all(sources.map((source) => testLiveSource(source.name, source.required)));
+  return await Promise.all(liveSources.map((source) => testLiveSource(source.name, source.required)));
 }
 
 async function canRunCoral(): Promise<boolean> {

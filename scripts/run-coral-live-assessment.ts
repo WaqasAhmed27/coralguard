@@ -13,7 +13,11 @@ const report = await assessPullRequest(
     redaction: "strict"
   },
   {
-    client: new CoralCliClient(process.env.CORAL_BIN, 20_000, process.env.CORAL_QUERY_PROFILE === "live" ? "live" : "demo"),
+    client: new CoralCliClient(
+      process.env.CORAL_BIN,
+      Number(process.env.CORAL_QUERY_TIMEOUT_MS ?? 20_000),
+      process.env.CORAL_QUERY_PROFILE === "live" ? "live" : "demo"
+    ),
     now: new Date("2026-05-26T12:00:00Z")
   }
 );

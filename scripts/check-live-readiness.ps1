@@ -91,7 +91,6 @@ $sourceChecks = @(
   "linear",
   "ci_artifacts",
   "slack_incidents",
-  "support",
   "osv"
 ) | ForEach-Object { Test-CoralSource $_ }
 
